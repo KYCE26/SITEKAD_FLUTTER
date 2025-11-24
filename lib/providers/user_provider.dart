@@ -1,32 +1,46 @@
-import 'dart:io'; // Untuk Platform check
+import 'dart:io';
 import 'package:flutter/material.dart';
-import 'package:flutter/foundation.dart'; // debugPrint
+import 'package:flutter/foundation.dart';
 import 'package:intl/intl.dart';
-import 'package:device_info_plus/device_info_plus.dart'; // Wajib ada
+import 'package:device_info_plus/device_info_plus.dart';
+import 'package:dio/dio.dart'; // PERBAIKAN 1: Import Dio ditambahkan kembali untuk tipe 'Response'
 import '../services/api_service.dart';
 import '../models/user_model.dart';
 
 class UserProvider with ChangeNotifier {
   final ApiService _apiService = ApiService();
 
+  // --- STATE UTAMA ---
   UserProfile? _user;
   List<AttendanceRecord> _history = [];
+  List<AttendanceRecord> _lemburHistory = [];
   bool _isLoading = false;
-  
-  // Status Absensi UI
+
+  // --- STATUS UI (Attendance) ---
   String _attendanceStatus = "Memuat status...";
   bool _canClockIn = false;
   bool _canClockOut = false;
 
+  // --- STATUS UI (Lembur) ---
+  String _lemburStatus = "Memuat...";
+  bool _isLemburClockedIn = false;
+  bool _isLemburClockedOut = false;
+
   // Getters
   UserProfile? get user => _user;
   List<AttendanceRecord> get history => _history;
+  List<AttendanceRecord> get lemburHistory => _lemburHistory;
   bool get isLoading => _isLoading;
+  
   String get attendanceStatus => _attendanceStatus;
   bool get canClockIn => _canClockIn;
   bool get canClockOut => _canClockOut;
 
-  // FUNGSI UTAMA: Tarik semua data (Profil & History)
+  String get lemburStatus => _lemburStatus;
+  bool get isLemburClockedIn => _isLemburClockedIn;
+  bool get isLemburClockedOut => _isLemburClockedOut;
+
+  // --- FETCH DATA GLOBAL ---
   Future<void> refreshData() async {
     _isLoading = true;
     notifyListeners();
@@ -35,6 +49,7 @@ class UserProvider with ChangeNotifier {
       await Future.wait([
         _fetchProfile(),
         _fetchHistory(),
+        _fetchLemburHistory(),
       ]);
     } catch (e) {
       debugPrint("Error refreshing data: $e");
@@ -44,9 +59,10 @@ class UserProvider with ChangeNotifier {
     }
   }
 
+  // 1. FETCH PROFILE
   Future<void> _fetchProfile() async {
     try {
-      final response = await _apiService.dio.get('/api/profile');
+      final response = await _apiService.dio.get('/profile');
       if (response.statusCode == 200) {
         final data = response.data['profile'];
         _user = UserProfile.fromJson(data);
@@ -56,62 +72,127 @@ class UserProvider with ChangeNotifier {
     }
   }
 
+  // 2. FETCH HISTORY & HITUNG STATUS ABSEN
   Future<void> _fetchHistory() async {
     try {
-      final response = await _apiService.dio.get('/api/uhistori');
+      final response = await _apiService.dio.get('/uhistori');
       if (response.statusCode == 200) {
         final List rawList = response.data['history'];
-        _history = rawList.map((e) => AttendanceRecord.fromApi(e)).toList();
         
-        _calculateAttendanceStatus(); // Hitung logika tombol
+        _history = rawList.map((e) {
+          String rawDate = e['tgl_absen'];
+          DateTime dt = DateTime.parse(rawDate).toLocal();
+          String dateStr = DateFormat('dd MMM yyyy', 'id_ID').format(dt);
+          String dayStr = DateFormat('EEEE', 'id_ID').format(dt);
+          
+          return AttendanceRecord(
+            date: dateStr,
+            day: dayStr,
+            clockIn: e['jam_masuk'] ?? '--:--',
+            // PERBAIKAN 2: Gunakan operator ?? agar lebih ringkas
+            clockOut: e['jam_keluar'] ?? '--:--',
+          );
+        }).toList();
+
+        _calculateAttendanceStatus();
       }
     } catch (e) {
       debugPrint("Error history: $e");
     }
   }
 
-  // LOGIKA ABSENSI
+  // 3. FETCH LEMBUR & HITUNG STATUS LEMBUR
+  Future<void> _fetchLemburHistory() async {
+    try {
+      final response = await _apiService.dio.get('/lembur/history');
+      if (response.statusCode == 200) {
+        final List rawList = response.data['history'];
+        
+        _lemburHistory = rawList.map((e) {
+          String rawDate = e['tgl_absen'];
+          DateTime dt = DateTime.parse(rawDate).toLocal();
+          String dateStr = DateFormat('dd MMM yyyy', 'id_ID').format(dt);
+          String dayStr = DateFormat('EEEE', 'id_ID').format(dt);
+
+          return AttendanceRecord(
+            date: dateStr,
+            day: dayStr,
+            clockIn: e['jam_masuk'] ?? '--:--',
+            // PERBAIKAN 2: Gunakan operator ?? agar lebih ringkas
+            clockOut: e['jam_keluar'] ?? '--:--',
+          );
+        }).toList();
+
+        _calculateLemburStatus();
+      }
+    } catch (e) {
+      debugPrint("Error lembur history: $e");
+    }
+  }
+
+  // --- LOGIKA PERHITUNGAN STATUS ---
+
   void _calculateAttendanceStatus() {
     final now = DateTime.now();
-    
-    if (_history.isEmpty) {
-      _setStatus("Belum Absen Hari Ini", canIn: true, canOut: false);
-      return;
-    }
+    final todayDate = DateFormat('dd MMM yyyy', 'id_ID').format(now);
 
-    final latestRecord = _history.first;
-    final todayStr = DateFormat('dd MMM yyyy', 'id_ID').format(now); 
-    
-    if (latestRecord.date.contains(todayStr) || latestRecord.date == todayStr) {
-      if (latestRecord.clockOut == "--:--:--") {
-        _setStatus("Sudah Clock In: ${latestRecord.clockIn}", canIn: false, canOut: true);
+    final staleSession = _history.firstWhere(
+      (rec) => rec.clockOut == '--:--' && rec.date != todayDate,
+      orElse: () => AttendanceRecord(date: '', day: '', clockIn: '', clockOut: ''),
+    );
+
+    final todaySession = _history.firstWhere(
+      (rec) => rec.date == todayDate,
+      orElse: () => AttendanceRecord(date: '', day: '', clockIn: '', clockOut: ''),
+    );
+
+    if (staleSession.date.isNotEmpty) {
+      _attendanceStatus = "Anda belum Clock Out dari ${staleSession.day}, ${staleSession.date}";
+      _canClockIn = false; 
+      _canClockOut = true; 
+    } 
+    else if (todaySession.date.isNotEmpty) {
+      if (todaySession.clockOut != '--:--') {
+        _attendanceStatus = "Anda sudah absen hari ini.";
+        _canClockIn = false;
+        _canClockOut = false;
       } else {
-        _setStatus("Selesai Absen Hari Ini", canIn: false, canOut: false);
+        _attendanceStatus = "Hadir - Masuk pukul ${todaySession.clockIn}";
+        _canClockIn = false;
+        _canClockOut = true;
       }
     } else {
-      if (latestRecord.clockOut == "--:--:--") {
-         _setStatus("Anda lupa Clock Out tanggal ${latestRecord.date}!", canIn: false, canOut: true);
-      } else {
-         _setStatus("Belum Absen Hari Ini", canIn: true, canOut: false);
-      }
+      _attendanceStatus = "Belum Absen Hari Ini";
+      _canClockIn = true;
+      _canClockOut = false;
     }
   }
 
-  void _setStatus(String status, {required bool canIn, required bool canOut}) {
-    _attendanceStatus = status;
-    _canClockIn = canIn;
-    _canClockOut = canOut;
+  void _calculateLemburStatus() {
+    final openLembur = _lemburHistory.firstWhere(
+      (rec) => rec.clockOut == '--:--',
+      orElse: () => AttendanceRecord(date: '', day: '', clockIn: '', clockOut: ''),
+    );
+
+    if (openLembur.date.isNotEmpty) {
+      _lemburStatus = "Lembur - Masuk pukul ${openLembur.clockIn}";
+      _isLemburClockedIn = true;
+      _isLemburClockedOut = false;
+    } else {
+      _lemburStatus = "Belum Lembur Hari Ini";
+      _isLemburClockedIn = false;
+      _isLemburClockedOut = false;
+    }
   }
 
-  // --- FUNGSI BARU: SUBMIT ABSENSI ---
+  // --- ACTION: SUBMIT ABSEN ---
   Future<bool> submitAttendance({
     required double latitude,
     required double longitude,
     required String qrCode,
-    required String type, // 'in' atau 'out'
+    required String type, 
   }) async {
     try {
-      // 1. Ambil Android ID
       String androidId = "unknown";
       DeviceInfoPlugin deviceInfo = DeviceInfoPlugin();
       if (Platform.isAndroid) {
@@ -122,15 +203,16 @@ class UserProvider with ChangeNotifier {
         androidId = iosInfo.identifierForVendor ?? "ios_uuid";
       }
 
-      // 2. Tentukan Endpoint
-      // Jika 'out', biasanya API berbeda atau method PUT. 
-      // Berdasarkan kode Kotlin: 
-      // In -> POST /api/absensi
-      // Out -> PUT /api/absensi (atau endpoint khusus jika ada logic lembur)
-      // Kita asumsikan endpoint standard absensi dulu
+      String endpoint = '';
+      // PERBAIKAN 3: Gunakan kurung kurawal {} untuk if/else
+      if (type == 'in') {
+        endpoint = '/absensi';
+      } else if (type == 'out') {
+        endpoint = '/absensi';
+      } else if (type == 'out-lembur') {
+        endpoint = '/lembur/end';
+      }
       
-      String endpoint = '/api/absensi';
-      // Data yang dikirim
       final data = {
         "latitude": latitude,
         "longitude": longitude,
@@ -138,21 +220,27 @@ class UserProvider with ChangeNotifier {
         "kodeqr": qrCode
       };
 
-      // Panggil API
-      // Untuk Clock OUT, biasanya backend perlu trigger khusus atau method PUT.
-      // Sesuaikan dengan backend Railway kamu. Di sini saya pakai logic umum.
-      final response = await _apiService.dio.post(endpoint, data: data);
+      // Tipe Response dari Dio
+      Response response;
+      if (type == 'out-lembur') {
+        response = await _apiService.dio.put(endpoint, data: data);
+      } else {
+        response = await _apiService.dio.post(endpoint, data: data);
+      }
 
       if (response.statusCode == 200 || response.statusCode == 201) {
-        // Sukses -> Refresh data history biar UI update otomatis
-        await refreshData();
+        await refreshData(); 
         return true;
       } else {
-        debugPrint("Submit gagal: ${response.statusCode}");
+        debugPrint("Gagal Absen: ${response.statusCode} - ${response.data}");
         return false;
       }
     } catch (e) {
-      debugPrint("Error submit attendance: $e");
+      debugPrint("Exception Absen: $e");
+      if (e.toString().contains("sudah absen") || e.toString().contains("Duplicate")) {
+         await refreshData();
+         return true;
+      }
       return false;
     }
   }
