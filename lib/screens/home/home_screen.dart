@@ -10,7 +10,7 @@ import '../../providers/auth_provider.dart';
 import '../attendance/scan_screen.dart';
 import '../attendance/confirmation_screen.dart';
 import '../overtime/lembur_screen.dart';
-
+import '../leave/leave_screen.dart';
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
 
@@ -98,8 +98,10 @@ class _HomeScreenState extends State<HomeScreen> {
                   title: "Pengajuan Cuti",
                   subtitle: "Ajukan cuti dengan melampirkan surat",
                   onTap: () {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text("Fitur Cuti akan hadir segera")),
+                    // UPDATE: Navigasi ke LeaveScreen
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) => const LeaveScreen()), // Pastikan import sudah ada
                     );
                   },
                 ),

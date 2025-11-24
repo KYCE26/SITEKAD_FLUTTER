@@ -3,19 +3,21 @@ import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:intl/intl.dart';
 import 'package:device_info_plus/device_info_plus.dart';
-import 'package:dio/dio.dart';
+import 'package:dio/dio.dart'; // Dipakai untuk FormData & Response
 import '../services/api_service.dart';
 import '../models/user_model.dart';
 
 class UserProvider with ChangeNotifier {
   final ApiService _apiService = ApiService();
 
+  // --- STATE UTAMA ---
   UserProfile? _user;
   List<AttendanceRecord> _history = [];
   List<AttendanceRecord> _lemburHistory = [];
   bool _isLoading = false;
   String? _errorMsg; 
 
+  // --- STATUS UI ---
   String _attendanceStatus = "Memuat status...";
   bool _canClockIn = false;
   bool _canClockOut = false;
@@ -24,6 +26,7 @@ class UserProvider with ChangeNotifier {
   bool _isLemburClockedIn = false;
   bool _isLemburClockedOut = false;
 
+  // Getters
   UserProfile? get user => _user;
   List<AttendanceRecord> get history => _history;
   List<AttendanceRecord> get lemburHistory => _lemburHistory;
@@ -58,7 +61,6 @@ class UserProvider with ChangeNotifier {
 
   Future<void> _fetchProfile() async {
     try {
-      // PERBAIKAN: Tambah /api
       final response = await _apiService.dio.get('/api/profile');
       if (response.statusCode == 200) {
         final data = response.data['profile'];
@@ -74,7 +76,6 @@ class UserProvider with ChangeNotifier {
 
   Future<void> _fetchHistory() async {
     try {
-      // PERBAIKAN: Tambah /api
       final response = await _apiService.dio.get('/api/uhistori');
       if (response.statusCode == 200) {
         final List rawList = response.data['history'] ?? [];
@@ -88,7 +89,6 @@ class UserProvider with ChangeNotifier {
 
   Future<void> _fetchLemburHistory() async {
     try {
-      // PERBAIKAN: Tambah /api
       final response = await _apiService.dio.get('/api/lembur/history');
       if (response.statusCode == 200) {
         final List rawList = response.data['history'] ?? [];
@@ -199,7 +199,6 @@ class UserProvider with ChangeNotifier {
         "spl_file": await MultipartFile.fromFile(splFile.path, filename: fileName),
       });
 
-      // PERBAIKAN: Tambah /api
       final response = await _apiService.dio.post('/api/lembur/start', data: formData);
 
       if (response.statusCode == 200 || response.statusCode == 201) {
@@ -223,7 +222,6 @@ class UserProvider with ChangeNotifier {
       String androidId = await _getAndroidId();
 
       String endpoint = '';
-      // PERBAIKAN: Tambah /api di semua endpoint
       if (type == 'in') {
         endpoint = '/api/absensi';
       } else if (type == 'out') {
@@ -257,6 +255,44 @@ class UserProvider with ChangeNotifier {
          await refreshData();
          return true;
       }
+      return false;
+    }
+  }
+
+  // --- FUNGSI BARU: SUBMIT CUTI ---
+  Future<bool> submitCuti({
+    required String alasan,
+    required String startDate, // yyyy-MM-dd
+    required String endDate,   // yyyy-MM-dd
+    required String description,
+    File? suketFile,
+  }) async {
+    try {
+      // Siapkan Map data dasar
+      Map<String, dynamic> dataMap = {
+        "alasan": alasan,
+        "tanggal_mulai": startDate,
+        "tanggal_selesai": endDate,
+        "keterangan": description,
+      };
+
+      // Tambahkan file jika ada
+      if (suketFile != null) {
+        String fileName = suketFile.path.split('/').last;
+        dataMap["suket"] = await MultipartFile.fromFile(suketFile.path, filename: fileName);
+      }
+
+      FormData formData = FormData.fromMap(dataMap);
+
+      final response = await _apiService.dio.post('/api/cuti', data: formData);
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        // Cuti biasanya tidak perlu refreshData real-time di Home, tapi boleh saja
+        return true;
+      }
+      return false;
+    } catch (e) {
+      debugPrint("Submit Cuti Error: $e");
       return false;
     }
   }
