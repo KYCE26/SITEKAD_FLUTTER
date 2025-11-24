@@ -11,6 +11,7 @@ import '../attendance/scan_screen.dart';
 import '../attendance/confirmation_screen.dart';
 import '../overtime/lembur_screen.dart';
 import '../leave/leave_screen.dart';
+
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
 
@@ -50,10 +51,12 @@ class _HomeScreenState extends State<HomeScreen> {
         onRefresh: () => userProvider.refreshData(),
         child: Builder(
           builder: (context) {
+            // 1. Loading Awal
             if (userProvider.isLoading && userProvider.user == null) {
               return const Center(child: CircularProgressIndicator());
             }
 
+            // 2. Error Gagal Load Profil
             if (!userProvider.isLoading && userProvider.user == null) {
               return Center(
                 child: Column(
@@ -61,7 +64,8 @@ class _HomeScreenState extends State<HomeScreen> {
                   children: [
                     const Icon(Icons.error_outline, size: 60, color: Colors.red),
                     const SizedBox(height: 16),
-                    const Text("Gagal memuat profil."),
+                    Text("Gagal memuat data: ${userProvider.errorMsg ?? ''}"),
+                    const SizedBox(height: 16),
                     ElevatedButton(
                       onPressed: () => userProvider.refreshData(),
                       child: const Text("Coba Lagi"),
@@ -71,6 +75,7 @@ class _HomeScreenState extends State<HomeScreen> {
               );
             }
 
+            // 3. Tampilan Utama
             return ListView(
               padding: const EdgeInsets.all(24.0),
               children: [
@@ -80,40 +85,46 @@ class _HomeScreenState extends State<HomeScreen> {
                 _buildClockSection(context, colorScheme, userProvider),
                 const SizedBox(height: 24),
 
-                _buildMenuCard(
-                  icon: Icons.work_history,
-                  title: "Lembur",
-                  subtitle: "Pengajuan & Absensi Lembur",
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (context) => const LemburScreen()),
-                    );
-                  },
+                // Menu Grid
+                Row(
+                  children: [
+                    Expanded(
+                      child: _buildMenuCard(
+                        icon: Icons.work_history,
+                        title: "Lembur",
+                        color: Colors.orange,
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(builder: (context) => const LemburScreen()),
+                          );
+                        },
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: _buildMenuCard(
+                        icon: Icons.event_note,
+                        title: "Cuti",
+                        color: Colors.blue,
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(builder: (context) => const LeaveScreen()),
+                          );
+                        },
+                      ),
+                    ),
+                  ],
                 ),
-                const SizedBox(height: 12),
                 
-                _buildMenuCard(
-                  icon: Icons.event_available,
-                  title: "Pengajuan Cuti",
-                  subtitle: "Ajukan cuti dengan melampirkan surat",
-                  onTap: () {
-                    // UPDATE: Navigasi ke LeaveScreen
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (context) => const LeaveScreen()), // Pastikan import sudah ada
-                    );
-                  },
-                ),
                 const SizedBox(height: 24),
-
                 const Text("Riwayat Kehadiran", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
                 const SizedBox(height: 12),
 
                 if (userProvider.history.isEmpty)
-                  const Card(child: Padding(padding: EdgeInsets.all(16), child: Text("Belum ada riwayat")))
+                  const Card(child: Padding(padding: EdgeInsets.all(16), child: Center(child: Text("Belum ada riwayat"))))
                 else
-                  // PERBAIKAN DI SINI: Menggunakan fungsi _buildHistoryItem agar tidak warning unused
                   ...userProvider.history.map((rec) => _buildHistoryItem(rec, colorScheme)),
                   
                 const SizedBox(height: 50),
@@ -125,17 +136,24 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildUserHeader(user) {
+  Widget _buildUserHeader(UserProfile? user) {
     return Row(
       children: [
-        const CircleAvatar(radius: 30, child: Icon(Icons.person)),
+        const CircleAvatar(radius: 30, child: Icon(Icons.person, size: 30)),
         const SizedBox(width: 16),
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(user?.namaLengkap ?? "-", style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
-            Text(user?.nitad ?? "-", style: const TextStyle(color: Colors.grey)),
-          ],
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                user?.namaLengkap ?? "-",
+                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+                overflow: TextOverflow.ellipsis,
+              ),
+              Text(user?.nitad ?? "-", style: const TextStyle(color: Colors.grey)),
+              Text(user?.jabatan ?? "-", style: const TextStyle(color: Colors.grey, fontSize: 12)),
+            ],
+          ),
         ),
       ],
     );
@@ -162,7 +180,9 @@ class _HomeScreenState extends State<HomeScreen> {
     }
 
     return Card(
+      elevation: 4,
       color: colors.primaryContainer,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       child: Padding(
         padding: const EdgeInsets.all(24),
         child: Column(
@@ -174,22 +194,49 @@ class _HomeScreenState extends State<HomeScreen> {
                 style: TextStyle(fontSize: 40, fontWeight: FontWeight.bold, color: colors.onPrimaryContainer),
               ),
             ),
+            Text(
+              DateFormat('EEEE, dd MMMM yyyy', 'id_ID').format(DateTime.now()),
+              style: TextStyle(fontSize: 14, color: colors.onPrimaryContainer.withOpacity(0.8)),
+            ),
             const SizedBox(height: 16),
-            Text(provider.attendanceStatus, style: const TextStyle(fontWeight: FontWeight.bold)),
-            const SizedBox(height: 16),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.2),
+                borderRadius: BorderRadius.circular(20)
+              ),
+              child: Text(
+                provider.attendanceStatus, 
+                style: TextStyle(fontWeight: FontWeight.bold, color: colors.onPrimaryContainer),
+                textAlign: TextAlign.center,
+              ),
+            ),
+            const SizedBox(height: 20),
             Row(
               children: [
                 Expanded(
-                  child: ElevatedButton(
+                  child: ElevatedButton.icon(
                     onPressed: provider.canClockIn ? () => startScanning('in') : null,
-                    child: const Text("Clock IN"),
+                    icon: const Icon(Icons.login),
+                    label: const Text("MASUK"),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.white,
+                      foregroundColor: colors.primary,
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                    ),
                   ),
                 ),
                 const SizedBox(width: 16),
                 Expanded(
-                  child: ElevatedButton(
+                  child: ElevatedButton.icon(
                     onPressed: provider.canClockOut ? () => startScanning('out') : null,
-                    child: const Text("Clock OUT"),
+                    icon: const Icon(Icons.logout),
+                    label: const Text("PULANG"),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.white,
+                      foregroundColor: colors.primary,
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                    ),
                   ),
                 ),
               ],
@@ -200,36 +247,20 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildMenuCard({required IconData icon, required String title, required String subtitle, required VoidCallback onTap}) {
+  Widget _buildMenuCard({required IconData icon, required String title, required Color color, required VoidCallback onTap}) {
     return Card(
       elevation: 2,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(12),
         child: Padding(
           padding: const EdgeInsets.all(16.0),
-          child: Row(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: Theme.of(context).colorScheme.secondaryContainer,
-                  shape: BoxShape.circle,
-                ),
-                child: Icon(icon, color: Theme.of(context).colorScheme.onSecondaryContainer),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-                    Text(subtitle, style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6), fontSize: 12)),
-                  ],
-                ),
-              ),
-              const Icon(Icons.chevron_right),
+              Icon(icon, size: 32, color: color),
+              const SizedBox(height: 8),
+              Text(title, style: const TextStyle(fontWeight: FontWeight.bold)),
             ],
           ),
         ),
@@ -240,10 +271,25 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget _buildHistoryItem(AttendanceRecord record, ColorScheme colors) {
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
+      elevation: 1,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: ListTile(
-        leading: const Icon(Icons.check_circle, color: Colors.green),
-        title: Text(record.date, style: const TextStyle(fontWeight: FontWeight.bold)),
-        subtitle: Text("Masuk: ${record.clockIn} - Keluar: ${record.clockOut}"),
+        leading: Container(
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            color: record.isLate ? Colors.red.withOpacity(0.1) : Colors.green.withOpacity(0.1),
+            shape: BoxShape.circle,
+          ),
+          child: Icon(
+            record.isLate ? Icons.warning_amber : Icons.check_circle,
+            color: record.isLate ? Colors.red : Colors.green,
+          ),
+        ),
+        title: Text(record.date, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+        subtitle: Text(
+          "Masuk: ${record.clockIn} • Keluar: ${record.clockOut}",
+          style: const TextStyle(fontSize: 12),
+        ),
       ),
     );
   }

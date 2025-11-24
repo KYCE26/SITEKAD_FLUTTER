@@ -42,12 +42,12 @@ class AttendanceRecord {
     this.isLate = false,
   });
 
-  // Helper untuk parsing data dari API uHistori
   factory AttendanceRecord.fromApi(Map<String, dynamic> json) {
-    // Logic parsing tanggal sederhana (bisa ditingkatkan dengan package intl)
+    // Parsing tanggal bisa dilakukan di sini atau di Provider/UI formatter
+    // Untuk sementara kita simpan raw string atau lakukan formatting dasar
     return AttendanceRecord(
-      date: json['tgl_absen'] ?? '', // Format dari API backend
-      day: '', // Nanti kita format di UI saja biar ringan
+      date: json['tgl_absen'] ?? '',
+      day: '', // Nanti diisi logic UI/Provider
       clockIn: json['jam_masuk'] ?? '--:--',
       clockOut: json['jam_keluar'] ?? '--:--',
     );
