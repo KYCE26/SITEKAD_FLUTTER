@@ -28,8 +28,8 @@ class UserProfile {
 }
 
 class AttendanceRecord {
-  final String date; // Format: "dd MMM yyyy"
-  final String day;  // Format: "Senin"
+  final String date;
+  final String day;
   final String clockIn;
   final String clockOut;
   final bool isLate;
@@ -42,15 +42,12 @@ class AttendanceRecord {
     this.isLate = false,
   });
 
-  // Parsing pintar dari API
+  // Helper untuk parsing data dari API uHistori
   factory AttendanceRecord.fromApi(Map<String, dynamic> json) {
-    // Kita ambil raw string tanggal dari API
-    // Asumsi API kirim "2023-10-25T..." atau format database
-    // Tapi di Kotlin kamu ada fungsi formatDate, di sini kita simpan hasil jadinya saja
-    // Biar Provider yang ngurus formatting
+    // Logic parsing tanggal sederhana (bisa ditingkatkan dengan package intl)
     return AttendanceRecord(
-      date: json['tgl_absen_formatted'] ?? json['tgl_absen'] ?? '', // Nanti di provider kita format ulang kalau perlu
-      day: '', // Nanti diisi di provider
+      date: json['tgl_absen'] ?? '', // Format dari API backend
+      day: '', // Nanti kita format di UI saja biar ringan
       clockIn: json['jam_masuk'] ?? '--:--',
       clockOut: json['jam_keluar'] ?? '--:--',
     );

@@ -1,9 +1,8 @@
-import 'dart:io'; 
+import 'dart:io'; // Untuk Platform check
 import 'package:flutter/material.dart';
-import 'package:flutter/foundation.dart';
+import 'package:flutter/foundation.dart'; // debugPrint
 import 'package:intl/intl.dart';
-import 'package:device_info_plus/device_info_plus.dart'; 
-import 'package:dio/dio.dart'; // Import Dio dipakai untuk tipe Response
+import 'package:device_info_plus/device_info_plus.dart'; // Wajib ada
 import '../services/api_service.dart';
 import '../models/user_model.dart';
 
@@ -33,9 +32,10 @@ class UserProvider with ChangeNotifier {
     notifyListeners();
 
     try {
-      // Kita panggil satu-satu biar kalau history error, profil tetap muncul
-      await _fetchProfile();
-      await _fetchHistory();
+      await Future.wait([
+        _fetchProfile(),
+        _fetchHistory(),
+      ]);
     } catch (e) {
       debugPrint("Error refreshing data: $e");
     } finally {
@@ -46,7 +46,7 @@ class UserProvider with ChangeNotifier {
 
   Future<void> _fetchProfile() async {
     try {
-      final response = await _apiService.dio.get('/profile');
+      final response = await _apiService.dio.get('/api/profile');
       if (response.statusCode == 200) {
         final data = response.data['profile'];
         _user = UserProfile.fromJson(data);
@@ -58,11 +58,12 @@ class UserProvider with ChangeNotifier {
 
   Future<void> _fetchHistory() async {
     try {
-      final response = await _apiService.dio.get('/uhistori');
+      final response = await _apiService.dio.get('/api/uhistori');
       if (response.statusCode == 200) {
         final List rawList = response.data['history'];
         _history = rawList.map((e) => AttendanceRecord.fromApi(e)).toList();
-        _calculateAttendanceStatus(); 
+        
+        _calculateAttendanceStatus(); // Hitung logika tombol
       }
     } catch (e) {
       debugPrint("Error history: $e");
@@ -79,7 +80,6 @@ class UserProvider with ChangeNotifier {
     }
 
     final latestRecord = _history.first;
-    // Pastikan Locale ID terinstall di main.dart
     final todayStr = DateFormat('dd MMM yyyy', 'id_ID').format(now); 
     
     if (latestRecord.date.contains(todayStr) || latestRecord.date == todayStr) {
@@ -103,12 +103,12 @@ class UserProvider with ChangeNotifier {
     _canClockOut = canOut;
   }
 
-  // --- FUNGSI SUBMIT ABSENSI ---
+  // --- FUNGSI BARU: SUBMIT ABSENSI ---
   Future<bool> submitAttendance({
     required double latitude,
     required double longitude,
     required String qrCode,
-    required String type, 
+    required String type, // 'in' atau 'out'
   }) async {
     try {
       // 1. Ambil Android ID
@@ -122,17 +122,15 @@ class UserProvider with ChangeNotifier {
         androidId = iosInfo.identifierForVendor ?? "ios_uuid";
       }
 
-      // 2. Tentukan Endpoint & Method
-      String endpoint = '';
-      if (type == 'in') {
-        endpoint = '/absensi';
-      } else if (type == 'out') {
-        endpoint = '/absensi'; // Sesuaikan jika beda
-      } else {
-        // Fallback untuk lembur nanti
-        endpoint = '/lembur/end'; 
-      }
+      // 2. Tentukan Endpoint
+      // Jika 'out', biasanya API berbeda atau method PUT. 
+      // Berdasarkan kode Kotlin: 
+      // In -> POST /api/absensi
+      // Out -> PUT /api/absensi (atau endpoint khusus jika ada logic lembur)
+      // Kita asumsikan endpoint standard absensi dulu
       
+      String endpoint = '/api/absensi';
+      // Data yang dikirim
       final data = {
         "latitude": latitude,
         "longitude": longitude,
@@ -140,18 +138,13 @@ class UserProvider with ChangeNotifier {
         "kodeqr": qrCode
       };
 
-      // Gunakan tipe Response dari Dio agar import tidak mubazir
-      Response response;
-      
-      // Logic sementara: Kalau 'out-lembur' pakai PUT, selain itu POST
-      // Sesuaikan dengan kebutuhan backend kamu nanti
-      if (type == 'out-lembur') {
-         response = await _apiService.dio.put(endpoint, data: data);
-      } else {
-         response = await _apiService.dio.post(endpoint, data: data);
-      }
+      // Panggil API
+      // Untuk Clock OUT, biasanya backend perlu trigger khusus atau method PUT.
+      // Sesuaikan dengan backend Railway kamu. Di sini saya pakai logic umum.
+      final response = await _apiService.dio.post(endpoint, data: data);
 
       if (response.statusCode == 200 || response.statusCode == 201) {
+        // Sukses -> Refresh data history biar UI update otomatis
         await refreshData();
         return true;
       } else {
