@@ -2,9 +2,14 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
+
+import '../../models/user_model.dart'; 
 import '../../providers/user_provider.dart';
 import '../../providers/auth_provider.dart';
-import '../../models/user_model.dart';
+
+// Import Layar Baru
+import '../attendance/scan_screen.dart';
+import '../attendance/confirmation_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -14,16 +19,12 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  // Logic Jam Digital Realtime
   late Stream<DateTime> _clockStream;
 
   @override
   void initState() {
     super.initState();
-    // Timer update setiap detik
     _clockStream = Stream.periodic(const Duration(seconds: 1), (_) => DateTime.now());
-    
-    // Ambil data API saat layar dibuka pertama kali
     WidgetsBinding.instance.addPostFrameCallback((_) {
       Provider.of<UserProvider>(context, listen: false).refreshData();
     });
@@ -40,7 +41,6 @@ class _HomeScreenState extends State<HomeScreen> {
         onRefresh: () => userProvider.refreshData(),
         child: Stack(
           children: [
-            // Background Gradient Tipis
             Container(
               decoration: BoxDecoration(
                 gradient: LinearGradient(
@@ -56,28 +56,23 @@ class _HomeScreenState extends State<HomeScreen> {
             
             SafeArea(
               child: userProvider.isLoading && userProvider.user == null
-                  ? const Center(child: CircularProgressIndicator()) // Loading awal
+                  ? const Center(child: CircularProgressIndicator())
                   : ListView(
                       padding: const EdgeInsets.all(24.0),
                       children: [
-                        // --- HEADER USER ---
                         _buildUserHeader(userProvider.user, () {
-                          // Logout Dialog
                           authProvider.logout();
                         }),
                         const SizedBox(height: 24),
 
-                        // --- JAM & TOMBOL ABSEN ---
-                        _buildClockSection(colorScheme, userProvider),
+                        _buildClockSection(context, colorScheme, userProvider), // Context dikirim
                         const SizedBox(height: 24),
 
-                        // --- MENU (CUTI / LEMBUR) ---
                         _buildMenuCard(
                           icon: Icons.event_available,
                           title: "Pengajuan Cuti",
                           subtitle: "Ajukan cuti dengan melampirkan surat",
                           onTap: () {
-                            // Navigasi ke Cuti (Nanti)
                             ScaffoldMessenger.of(context).showSnackBar(
                               const SnackBar(content: Text("Fitur Cuti akan hadir di Langkah 4")),
                             );
@@ -85,7 +80,6 @@ class _HomeScreenState extends State<HomeScreen> {
                         ),
                         const SizedBox(height: 24),
 
-                        // --- RIWAYAT HEADER ---
                         Row(
                           children: [
                             Icon(Icons.history, color: colorScheme.primary),
@@ -98,13 +92,12 @@ class _HomeScreenState extends State<HomeScreen> {
                         ),
                         const SizedBox(height: 12),
 
-                        // --- LIST RIWAYAT ---
                         if (userProvider.history.isEmpty)
                           const Center(child: Padding(padding: EdgeInsets.all(20), child: Text("Belum ada data")))
                         else
                           ...userProvider.history.map((record) => _buildHistoryItem(record, colorScheme)),
                           
-                        const SizedBox(height: 50), // Spacer bawah
+                        const SizedBox(height: 50),
                       ],
                     ),
             ),
@@ -114,7 +107,6 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  // WIDGET: Header User (Foto & Nama)
   Widget _buildUserHeader(user, VoidCallback onLogout) {
     return Row(
       children: [
@@ -125,10 +117,7 @@ class _HomeScreenState extends State<HomeScreen> {
             color: Colors.white,
             shape: BoxShape.circle,
             border: Border.all(color: Theme.of(context).colorScheme.primary, width: 2),
-            // Placeholder Logo
-            image: const DecorationImage(image: AssetImage('assets/images/logo.png'), fit: BoxFit.cover),
           ),
-          // Fallback child icon kalau image error
           child: const Icon(Icons.person),
         ),
         const SizedBox(width: 16),
@@ -154,8 +143,31 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  // WIDGET: Jam & Tombol
-  Widget _buildClockSection(ColorScheme colors, UserProvider provider) {
+  // --- UPDATE PENTING DI SINI: Navigasi ke ScanScreen ---
+  Widget _buildClockSection(BuildContext context, ColorScheme colors, UserProvider provider) {
+    
+    // Fungsi Helper untuk Navigasi
+    void startScanning(String type) async {
+      // 1. Buka Layar Scan dan tunggu hasilnya (String QR Code)
+      final qrResult = await Navigator.push(
+        context,
+        MaterialPageRoute(builder: (context) => const ScanScreen()),
+      );
+
+      // 2. Jika dapat QR Code, buka Layar Konfirmasi
+      if (qrResult != null && context.mounted) {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => ConfirmationScreen(
+              qrCode: qrResult,
+              type: type, // 'in' atau 'out'
+            ),
+          ),
+        );
+      }
+    }
+
     return Card(
       elevation: 4,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
@@ -163,7 +175,6 @@ class _HomeScreenState extends State<HomeScreen> {
         padding: const EdgeInsets.all(24.0),
         child: Column(
           children: [
-            // StreamBuilder untuk update jam per detik tanpa rebuild seluruh layar
             StreamBuilder<DateTime>(
               stream: _clockStream,
               builder: (context, snapshot) {
@@ -199,13 +210,8 @@ class _HomeScreenState extends State<HomeScreen> {
                 Expanded(
                   child: ElevatedButton(
                     onPressed: provider.canClockIn 
-                        ? () {
-                            // Action Clock In (Nanti buka Scanner)
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(content: Text("Buka Scanner Clock IN...")),
-                            );
-                          } 
-                        : null, // Disable button
+                        ? () => startScanning('in') // Trigger Scan IN
+                        : null,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: colors.primary,
                       foregroundColor: Colors.white,
@@ -219,12 +225,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 Expanded(
                   child: ElevatedButton(
                     onPressed: provider.canClockOut 
-                        ? () {
-                            // Action Clock Out
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(content: Text("Buka Scanner Clock OUT...")),
-                            );
-                          } 
+                        ? () => startScanning('out') // Trigger Scan OUT
                         : null,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: colors.primary,
@@ -243,7 +244,6 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  // WIDGET: Menu Card (Cuti)
   Widget _buildMenuCard({required IconData icon, required String title, required String subtitle, required VoidCallback onTap}) {
     return Card(
       elevation: 2,
@@ -281,7 +281,6 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  // WIDGET: History Item
   Widget _buildHistoryItem(AttendanceRecord record, ColorScheme colors) {
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
@@ -310,7 +309,6 @@ class _HomeScreenState extends State<HomeScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    // Gunakan tanggal mentah dulu, atau format jika perlu
                     record.date, 
                     style: const TextStyle(fontWeight: FontWeight.bold),
                   ),

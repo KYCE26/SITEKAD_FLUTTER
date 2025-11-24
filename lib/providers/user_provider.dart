@@ -1,6 +1,8 @@
+import 'dart:io'; // Untuk Platform check
 import 'package:flutter/material.dart';
-import 'package:flutter/foundation.dart'; // Import ini untuk debugPrint
+import 'package:flutter/foundation.dart'; // debugPrint
 import 'package:intl/intl.dart';
+import 'package:device_info_plus/device_info_plus.dart'; // Wajib ada
 import '../services/api_service.dart';
 import '../models/user_model.dart';
 
@@ -78,23 +80,15 @@ class UserProvider with ChangeNotifier {
     }
 
     final latestRecord = _history.first;
-    
-    // Cek apakah record terakhir itu hari ini?
     final todayStr = DateFormat('dd MMM yyyy', 'id_ID').format(now); 
     
-    // Jika tanggal di record SAMA dengan hari ini
     if (latestRecord.date.contains(todayStr) || latestRecord.date == todayStr) {
-      // PERBAIKAN: Hapus check null karena clockOut dipastikan String di Model
       if (latestRecord.clockOut == "--:--:--") {
-        // Masuk sudah, Keluar belum
         _setStatus("Sudah Clock In: ${latestRecord.clockIn}", canIn: false, canOut: true);
       } else {
-        // Masuk sudah, Keluar sudah
         _setStatus("Selesai Absen Hari Ini", canIn: false, canOut: false);
       }
     } else {
-      // Record terakhir BUKAN hari ini -> Berarti hari ini belum absen
-      // TAPI cek dulu, jangan2 user lupa checkout kemarin (Stale Session)
       if (latestRecord.clockOut == "--:--:--") {
          _setStatus("Anda lupa Clock Out tanggal ${latestRecord.date}!", canIn: false, canOut: true);
       } else {
@@ -107,5 +101,59 @@ class UserProvider with ChangeNotifier {
     _attendanceStatus = status;
     _canClockIn = canIn;
     _canClockOut = canOut;
+  }
+
+  // --- FUNGSI BARU: SUBMIT ABSENSI ---
+  Future<bool> submitAttendance({
+    required double latitude,
+    required double longitude,
+    required String qrCode,
+    required String type, // 'in' atau 'out'
+  }) async {
+    try {
+      // 1. Ambil Android ID
+      String androidId = "unknown";
+      DeviceInfoPlugin deviceInfo = DeviceInfoPlugin();
+      if (Platform.isAndroid) {
+        AndroidDeviceInfo androidInfo = await deviceInfo.androidInfo;
+        androidId = androidInfo.id;
+      } else if (Platform.isIOS) {
+        IosDeviceInfo iosInfo = await deviceInfo.iosInfo;
+        androidId = iosInfo.identifierForVendor ?? "ios_uuid";
+      }
+
+      // 2. Tentukan Endpoint
+      // Jika 'out', biasanya API berbeda atau method PUT. 
+      // Berdasarkan kode Kotlin: 
+      // In -> POST /api/absensi
+      // Out -> PUT /api/absensi (atau endpoint khusus jika ada logic lembur)
+      // Kita asumsikan endpoint standard absensi dulu
+      
+      String endpoint = '/api/absensi';
+      // Data yang dikirim
+      final data = {
+        "latitude": latitude,
+        "longitude": longitude,
+        "android_id": androidId,
+        "kodeqr": qrCode
+      };
+
+      // Panggil API
+      // Untuk Clock OUT, biasanya backend perlu trigger khusus atau method PUT.
+      // Sesuaikan dengan backend Railway kamu. Di sini saya pakai logic umum.
+      final response = await _apiService.dio.post(endpoint, data: data);
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        // Sukses -> Refresh data history biar UI update otomatis
+        await refreshData();
+        return true;
+      } else {
+        debugPrint("Submit gagal: ${response.statusCode}");
+        return false;
+      }
+    } catch (e) {
+      debugPrint("Error submit attendance: $e");
+      return false;
+    }
   }
 }
