@@ -2,7 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
-import '../../models/user_model.dart'; 
+import '../../models/user_model.dart';
 import '../../providers/user_provider.dart';
 import '../attendance/scan_screen.dart';
 import '../attendance/confirmation_screen.dart';
@@ -20,7 +20,10 @@ class _HomeTabState extends State<HomeTab> {
   @override
   void initState() {
     super.initState();
-    _clockStream = Stream.periodic(const Duration(seconds: 1), (_) => DateTime.now());
+    _clockStream = Stream.periodic(
+      const Duration(seconds: 1),
+      (_) => DateTime.now(),
+    );
   }
 
   @override
@@ -42,7 +45,12 @@ class _HomeTabState extends State<HomeTab> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text("Aktivitas Terkini", style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
+              Text(
+                "Aktivitas Terkini",
+                style: theme.textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
             ],
           ),
           const SizedBox(height: 12),
@@ -50,12 +58,17 @@ class _HomeTabState extends State<HomeTab> {
           if (userProvider.history.isEmpty)
             Center(
               child: Padding(
-                padding: const EdgeInsets.all(20), 
-                child: Text("Belum ada aktivitas", style: TextStyle(color: theme.colorScheme.secondary))
-              )
+                padding: const EdgeInsets.all(20),
+                child: Text(
+                  "Belum ada aktivitas",
+                  style: TextStyle(color: theme.colorScheme.secondary),
+                ),
+              ),
             )
           else
-            ...userProvider.history.take(5).map((rec) => _buildHistoryItem(rec, theme)),
+            ...userProvider.history
+                .take(5)
+                .map((rec) => _buildHistoryItem(rec, theme)),
         ],
       ),
     );
@@ -71,10 +84,13 @@ class _HomeTabState extends State<HomeTab> {
           decoration: BoxDecoration(
             color: Colors.white,
             shape: BoxShape.circle,
-            border: Border.all(color: theme.colorScheme.primary.withValues(alpha: 0.2), width: 1),
+            border: Border.all(
+              color: theme.colorScheme.primary.withValues(alpha: 0.2),
+              width: 1,
+            ),
             image: const DecorationImage(
               image: AssetImage('assets/images/logo_dapensi.png'),
-              fit: BoxFit.contain, 
+              fit: BoxFit.contain,
             ),
           ),
         ),
@@ -84,11 +100,15 @@ class _HomeTabState extends State<HomeTab> {
           children: [
             Text(
               user?.namaLengkap ?? "Loading...",
-              style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+              style: theme.textTheme.titleLarge?.copyWith(
+                fontWeight: FontWeight.bold,
+              ),
             ),
             Text(
               user?.nitad ?? "...",
-              style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.secondary),
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: theme.colorScheme.secondary,
+              ),
             ),
           ],
         ),
@@ -96,7 +116,11 @@ class _HomeTabState extends State<HomeTab> {
     );
   }
 
-  Widget _buildClockCard(BuildContext context, ThemeData theme, UserProvider provider) {
+  Widget _buildClockCard(
+    BuildContext context,
+    ThemeData theme,
+    UserProvider provider,
+  ) {
     void startScanning(String type) async {
       final qrResult = await Navigator.push(
         context,
@@ -107,7 +131,8 @@ class _HomeTabState extends State<HomeTab> {
         Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (context) => ConfirmationScreen(qrCode: qrResult, type: type),
+            builder: (context) =>
+                ConfirmationScreen(qrCode: qrResult, type: type),
           ),
         );
       }
@@ -120,7 +145,10 @@ class _HomeTabState extends State<HomeTab> {
       color: theme.cardTheme.color,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(24),
-        side: BorderSide(color: theme.colorScheme.primary.withValues(alpha: 0.3), width: 1.5),
+        side: BorderSide(
+          color: theme.colorScheme.primary.withValues(alpha: 0.3),
+          width: 1.5,
+        ),
       ),
       child: Padding(
         padding: const EdgeInsets.all(24),
@@ -131,8 +159,8 @@ class _HomeTabState extends State<HomeTab> {
               builder: (_, snap) => Text(
                 DateFormat('HH:mm:ss').format(snap.data ?? DateTime.now()),
                 style: TextStyle(
-                  fontSize: 52, 
-                  fontWeight: FontWeight.bold, 
+                  fontSize: 52,
+                  fontWeight: FontWeight.bold,
                   color: theme.colorScheme.primary,
                   letterSpacing: 2,
                 ),
@@ -140,31 +168,41 @@ class _HomeTabState extends State<HomeTab> {
             ),
             Text(
               DateFormat('EEEE, dd MMMM yyyy', 'id_ID').format(DateTime.now()),
-              style: TextStyle(fontSize: 16, color: theme.colorScheme.secondary),
+              style: TextStyle(
+                fontSize: 16,
+                color: theme.colorScheme.secondary,
+              ),
             ),
             const SizedBox(height: 24),
             const Divider(),
             const SizedBox(height: 16),
-            
+
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
               decoration: BoxDecoration(
-                color: isDarkMode ? Colors.white.withValues(alpha: 0.05) : Colors.grey.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(20)
+                color: isDarkMode
+                    ? Colors.white.withValues(alpha: 0.05)
+                    : Colors.grey.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(20),
               ),
               child: Text(
-                "Status: ${provider.attendanceStatus}", 
-                style: TextStyle(fontWeight: FontWeight.w600, color: theme.colorScheme.onSurface),
+                "Status: ${provider.attendanceStatus}",
+                style: TextStyle(
+                  fontWeight: FontWeight.w600,
+                  color: theme.colorScheme.onSurface,
+                ),
                 textAlign: TextAlign.center,
               ),
             ),
             const SizedBox(height: 24),
-            
+
             Row(
               children: [
                 Expanded(
                   child: ElevatedButton(
-                    onPressed: provider.canClockIn ? () => startScanning('in') : null,
+                    onPressed: provider.canClockIn
+                        ? () => startScanning('in')
+                        : null,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: theme.colorScheme.primary,
                       foregroundColor: Colors.white,
@@ -176,18 +214,24 @@ class _HomeTabState extends State<HomeTab> {
                 const SizedBox(width: 16),
                 Expanded(
                   child: OutlinedButton(
-                    onPressed: provider.canClockOut ? () => startScanning('out') : null,
+                    onPressed: provider.canClockOut
+                        ? () => startScanning('out')
+                        : null,
                     style: OutlinedButton.styleFrom(
                       side: BorderSide(color: theme.colorScheme.primary),
-                      foregroundColor: isDarkMode ? Colors.white : theme.colorScheme.primary,
+                      foregroundColor: isDarkMode
+                          ? Colors.white
+                          : theme.colorScheme.primary,
                       padding: const EdgeInsets.symmetric(vertical: 16),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
                     ),
                     child: const Text("Clock Out"),
                   ),
                 ),
               ],
-            )
+            ),
           ],
         ),
       ),
@@ -202,14 +246,18 @@ class _HomeTabState extends State<HomeTab> {
       decoration: BoxDecoration(
         color: theme.cardTheme.color,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: theme.colorScheme.outline.withValues(alpha: 0.1)),
+        border: Border.all(
+          color: theme.colorScheme.outline.withValues(alpha: 0.1),
+        ),
       ),
       child: Row(
         children: [
           Container(
             padding: const EdgeInsets.all(10),
             decoration: BoxDecoration(
-              color: isOk ? Colors.green.withValues(alpha: 0.1) : Colors.red.withValues(alpha: 0.1),
+              color: isOk
+                  ? Colors.green.withValues(alpha: 0.1)
+                  : Colors.red.withValues(alpha: 0.1),
               shape: BoxShape.circle,
             ),
             child: Icon(
@@ -224,13 +272,17 @@ class _HomeTabState extends State<HomeTab> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  record.date, 
-                  style: theme.textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.bold)
+                  record.date,
+                  style: theme.textTheme.bodyLarge?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
                 const SizedBox(height: 4),
                 Text(
                   "Masuk: ${record.clockIn} • Keluar: ${record.clockOut}",
-                  style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.secondary),
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: theme.colorScheme.secondary,
+                  ),
                 ),
               ],
             ),
