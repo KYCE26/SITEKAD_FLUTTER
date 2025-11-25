@@ -75,19 +75,17 @@ class _AuthScreenState extends State<AuthScreen> {
     return Column(
       children: [
         Container(
-          width: 110,
-          height: 110,
+          width: 150,
+          height: 100,
           decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(24),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.1),
-                blurRadius: 10,
-                offset: const Offset(0, 5),
-              )
-            ],
-          ), // Tutup BoxDecoration di sini
+            // Hapus warna background putih kalau logonya sudah ada background abu
+            // atau biarkan transparent
+            borderRadius: BorderRadius.circular(16),
+            image: const DecorationImage(
+              image: AssetImage('assets/images/logo_dapensi.jpg'), // <--- GANTI INI
+              fit: BoxFit.contain, // Pakai contain biar gak kepotong
+            ),
+          ),
           // Pindahkan child ke sini (milik Container)
           child: const Icon(Icons.work_outline, size: 50, color: Color(0xFFD90429)),
         ),

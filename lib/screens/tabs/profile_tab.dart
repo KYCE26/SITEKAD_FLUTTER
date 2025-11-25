@@ -34,8 +34,8 @@ class ProfileTab extends StatelessWidget {
                 ),
                 child: CircleAvatar(
                   radius: 50,
-                  backgroundColor: theme.colorScheme.surfaceContainerHighest,
-                  child: Icon(Icons.person, size: 60, color: theme.colorScheme.onSurface),
+                  backgroundColor: Colors.white,
+                  backgroundImage: const AssetImage('assets/images/logo_dapensi.jpg'), // <--- GANTI INI
                 ),
               ),
             ],

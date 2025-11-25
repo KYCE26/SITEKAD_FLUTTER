@@ -66,14 +66,16 @@ class _HomeTabState extends State<HomeTab> {
     return Row(
       children: [
         Container(
+          width: 50,
+          height: 50,
           decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            border: Border.all(color: theme.colorScheme.primary, width: 2),
-          ),
-          child: CircleAvatar(
-            radius: 28,
-            backgroundColor: theme.colorScheme.surface,
-            child: Icon(Icons.person, size: 32, color: theme.colorScheme.onSurface),
+            color: Colors.white,
+            shape: BoxShape.circle, // Tetap bulat biar cantik
+            border: Border.all(color: Colors.grey.withValues(alpha: 0.2), width: 1),
+            image: const DecorationImage(
+              image: AssetImage('assets/images/logo_dapensi.jpg'), // <--- GANTI INI
+              fit: BoxFit.contain, // Biar logonya masuk semua ke lingkaran
+            ),
           ),
         ),
         const SizedBox(width: 16),
