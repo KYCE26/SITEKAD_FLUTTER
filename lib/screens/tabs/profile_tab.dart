@@ -22,7 +22,7 @@ class ProfileTab extends StatelessWidget {
     return ListView(
       padding: const EdgeInsets.all(24),
       children: [
-        // Avatar
+        // Avatar & Logo
         Center(
           child: Stack(
             children: [
@@ -32,10 +32,11 @@ class ProfileTab extends StatelessWidget {
                   shape: BoxShape.circle,
                   border: Border.all(color: theme.colorScheme.primary.withValues(alpha: 0.2), width: 2),
                 ),
-                child: CircleAvatar(
+                // Ganti Icon Person dengan Foto Logo
+                child: const CircleAvatar(
                   radius: 50,
-                  backgroundColor: Colors.white,
-                  backgroundImage: const AssetImage('assets/images/logo_dapensi.jpg'), // <--- GANTI INI
+                  backgroundColor: Colors.white, // Background putih biar logo jpg terlihat jelas
+                  backgroundImage: AssetImage('assets/images/logo_dapensi.jpg'), 
                 ),
               ),
             ],
@@ -91,7 +92,7 @@ class ProfileTab extends StatelessWidget {
             title: const Text("Mode Gelap"),
             secondary: Icon(Icons.dark_mode_outlined, color: theme.colorScheme.onSurface),
             value: themeProvider.isDarkMode,
-            // PERBAIKAN: Hapus activeColor agar ikut tema (Primary Color)
+            // activeColor dihapus agar ikut tema (Primary Color)
             onChanged: (val) => themeProvider.toggleTheme(val),
           ),
         ),

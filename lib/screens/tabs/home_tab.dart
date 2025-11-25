@@ -43,7 +43,6 @@ class _HomeTabState extends State<HomeTab> {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text("Aktivitas Terkini", style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
-              // TextButton(onPressed: () {}, child: const Text("Lihat Semua")),
             ],
           ),
           const SizedBox(height: 12),
@@ -65,16 +64,17 @@ class _HomeTabState extends State<HomeTab> {
   Widget _buildWelcomeHeader(UserProfile? user, ThemeData theme) {
     return Row(
       children: [
+        // LOGO KECIL DI SINI
         Container(
           width: 50,
           height: 50,
           decoration: BoxDecoration(
             color: Colors.white,
-            shape: BoxShape.circle, // Tetap bulat biar cantik
-            border: Border.all(color: Colors.grey.withValues(alpha: 0.2), width: 1),
+            shape: BoxShape.circle,
+            border: Border.all(color: theme.colorScheme.primary.withValues(alpha: 0.2), width: 1),
             image: const DecorationImage(
-              image: AssetImage('assets/images/logo_dapensi.jpg'), // <--- GANTI INI
-              fit: BoxFit.contain, // Biar logonya masuk semua ke lingkaran
+              image: AssetImage('assets/images/logo_dapensi.jpg'),
+              fit: BoxFit.contain, 
             ),
           ),
         ),
@@ -116,7 +116,6 @@ class _HomeTabState extends State<HomeTab> {
     final isDarkMode = theme.brightness == Brightness.dark;
 
     return Card(
-      // Card Putih/Gelap dengan Border Merah Tipis
       elevation: 0,
       color: theme.cardTheme.color,
       shape: RoundedRectangleBorder(
@@ -127,7 +126,6 @@ class _HomeTabState extends State<HomeTab> {
         padding: const EdgeInsets.all(24),
         child: Column(
           children: [
-            // JAM DIGITAL (WARNA MERAH)
             StreamBuilder<DateTime>(
               stream: _clockStream,
               builder: (_, snap) => Text(
@@ -135,7 +133,7 @@ class _HomeTabState extends State<HomeTab> {
                 style: TextStyle(
                   fontSize: 52, 
                   fontWeight: FontWeight.bold, 
-                  color: theme.colorScheme.primary, // Merah di sini!
+                  color: theme.colorScheme.primary,
                   letterSpacing: 2,
                 ),
               ),
@@ -148,7 +146,6 @@ class _HomeTabState extends State<HomeTab> {
             const Divider(),
             const SizedBox(height: 16),
             
-            // Status Pill
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
               decoration: BoxDecoration(
@@ -163,14 +160,13 @@ class _HomeTabState extends State<HomeTab> {
             ),
             const SizedBox(height: 24),
             
-            // Tombol Aksi
             Row(
               children: [
                 Expanded(
                   child: ElevatedButton(
                     onPressed: provider.canClockIn ? () => startScanning('in') : null,
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: theme.colorScheme.primary, // Tombol Masuk Merah Solid
+                      backgroundColor: theme.colorScheme.primary,
                       foregroundColor: Colors.white,
                       elevation: 0,
                     ),
@@ -182,7 +178,7 @@ class _HomeTabState extends State<HomeTab> {
                   child: OutlinedButton(
                     onPressed: provider.canClockOut ? () => startScanning('out') : null,
                     style: OutlinedButton.styleFrom(
-                      side: BorderSide(color: theme.colorScheme.primary), // Tombol Keluar Outline Merah
+                      side: BorderSide(color: theme.colorScheme.primary),
                       foregroundColor: isDarkMode ? Colors.white : theme.colorScheme.primary,
                       padding: const EdgeInsets.symmetric(vertical: 16),
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),

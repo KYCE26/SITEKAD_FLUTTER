@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../providers/auth_provider.dart';
 
-// Enum untuk State Tampilan
 enum AuthState { welcome, login, register }
 
 class AuthScreen extends StatefulWidget {
@@ -32,9 +31,9 @@ class _AuthScreenState extends State<AuthScreen> {
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
             colors: [
-              colorScheme.surface, // PERBAIKAN 1: Ganti background jadi surface
+              colorScheme.surface, 
               colorScheme.surface,
-              colorScheme.surface, // PERBAIKAN 1: Gunakan surface agar konsisten di M3
+              colorScheme.surface, 
             ],
           ),
         ),
@@ -74,20 +73,17 @@ class _AuthScreenState extends State<AuthScreen> {
   Widget _buildLogo(ColorScheme colors) {
     return Column(
       children: [
+        // LOGO UTAMA
         Container(
-          width: 150,
-          height: 100,
+          width: 180,
+          height: 120,
           decoration: BoxDecoration(
-            // Hapus warna background putih kalau logonya sudah ada background abu
-            // atau biarkan transparent
-            borderRadius: BorderRadius.circular(16),
+            borderRadius: BorderRadius.circular(24),
             image: const DecorationImage(
-              image: AssetImage('assets/images/logo_dapensi.jpg'), // <--- GANTI INI
-              fit: BoxFit.contain, // Pakai contain biar gak kepotong
+              image: AssetImage('assets/images/logo_dapensi.jpg'), // Pastikan path ini benar
+              fit: BoxFit.contain,
             ),
           ),
-          // Pindahkan child ke sini (milik Container)
-          child: const Icon(Icons.work_outline, size: 50, color: Color(0xFFD90429)),
         ),
         const SizedBox(height: 24),
         Text(
@@ -143,8 +139,11 @@ class WelcomeButtons extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Card(
-      elevation: 8,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+      elevation: 0,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(24),
+        side: BorderSide(color: Colors.grey.withValues(alpha: 0.2)),
+      ),
       child: Padding(
         padding: const EdgeInsets.all(24.0),
         child: Column(
@@ -158,7 +157,7 @@ class WelcomeButtons extends StatelessWidget {
                   backgroundColor: Theme.of(context).colorScheme.primary,
                   foregroundColor: Colors.white,
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                  elevation: 4,
+                  elevation: 0,
                 ),
                 child: const Text("LOGIN", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
               ),
@@ -203,8 +202,11 @@ class _LoginFormState extends State<LoginForm> {
     final authProvider = Provider.of<AuthProvider>(context);
 
     return Card(
-      elevation: 8,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+      elevation: 0,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(24),
+        side: BorderSide(color: Colors.grey.withValues(alpha: 0.2)),
+      ),
       child: Padding(
         padding: const EdgeInsets.all(24.0),
         child: Form(
@@ -275,7 +277,6 @@ class _LoginFormState extends State<LoginForm> {
               TextButton(
                 onPressed: widget.onBackClick,
                 child: Text("Kembali", 
-                  // PERBAIKAN 2: Ganti .withOpacity jadi .withValues
                   style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6))
                 ),
               ),
@@ -309,8 +310,11 @@ class _RegisterFormState extends State<RegisterForm> {
     final authProvider = Provider.of<AuthProvider>(context);
 
     return Card(
-      elevation: 8,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+      elevation: 0,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(24),
+        side: BorderSide(color: Colors.grey.withValues(alpha: 0.2)),
+      ),
       child: Padding(
         padding: const EdgeInsets.all(24.0),
         child: Form(
@@ -402,7 +406,6 @@ class _RegisterFormState extends State<RegisterForm> {
               TextButton(
                 onPressed: widget.onBackClick,
                 child: Text("Kembali", 
-                  // PERBAIKAN 2: Ganti .withOpacity jadi .withValues
                   style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6))
                 ),
               ),
