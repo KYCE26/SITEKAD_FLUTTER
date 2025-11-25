@@ -13,21 +13,17 @@ class UserProvider with ChangeNotifier {
   UserProfile? _user;
   List<AttendanceRecord> _history = [];
   List<AttendanceRecord> _lemburHistory = [];
-  
   bool _isLoading = false;
   String? _errorMsg; 
 
-  // Status Absensi Harian
-  String _attendanceStatus = "Memuat...";
+  String _attendanceStatus = "Memuat status...";
   bool _canClockIn = false;
   bool _canClockOut = false;
 
-  // Status Lembur
-  String _lemburStatus = "Memuat...";
-  bool _isLemburClockedIn = false; // Sedang lembur?
-  bool _isLemburClockedOut = false; // Bisa akhiri lembur?
+  String _lemburStatus = "Memuat status...";
+  bool _isLemburClockedIn = false;
+  bool _isLemburClockedOut = false;
 
-  // Getters
   UserProfile? get user => _user;
   List<AttendanceRecord> get history => _history;
   List<AttendanceRecord> get lemburHistory => _lemburHistory;
@@ -71,7 +67,6 @@ class UserProvider with ChangeNotifier {
       }
     } catch (e) {
       debugPrint("Error profile: $e");
-      // Jangan rethrow agar UI lain tetap jalan
     }
   }
 
@@ -106,8 +101,6 @@ class UserProvider with ChangeNotifier {
     for (var e in rawList) {
       String dateStr = e['tgl_absen']?.toString() ?? "";
       String displayDate = dateStr;
-      
-      // Format Tanggal Cantik (Senin, 24 Nov 2025)
       try {
           if(dateStr.isNotEmpty) {
             DateTime dt = DateTime.parse(dateStr).toLocal();
@@ -117,7 +110,7 @@ class UserProvider with ChangeNotifier {
 
       results.add(AttendanceRecord(
         date: displayDate,
-        day: "", // Sudah digabung di date
+        day: "",
         clockIn: e['jam_masuk']?.toString() ?? "--:--",
         clockOut: e['jam_keluar']?.toString() ?? "--:--",
       ));
@@ -125,10 +118,9 @@ class UserProvider with ChangeNotifier {
     return results;
   }
 
-  // LOGIKA ABSENSI HARIAN (Sesuai Kotlin)
   void _calculateAttendanceStatus() {
     final now = DateTime.now();
-    final todayStr = DateFormat('EEEE, dd MMM yyyy', 'id_ID').format(now); // Format harus sama dgn _parseRecords
+    final todayStr = DateFormat('EEEE, dd MMM yyyy', 'id_ID').format(now);
 
     if (_history.isEmpty) {
       _setStatus("Belum Absen Hari Ini", canIn: true, canOut: false);
@@ -136,20 +128,13 @@ class UserProvider with ChangeNotifier {
     }
 
     final latest = _history.first;
-    
-    // Cek apakah record terakhir adalah hari ini
     if (latest.date == todayStr) {
-      // Hari ini sudah ada data
       if (latest.clockOut == "--:--") {
-        // Sudah masuk, belum pulang
         _setStatus("Sudah Clock In: ${latest.clockIn}", canIn: false, canOut: true);
       } else {
-        // Sudah masuk dan sudah pulang
         _setStatus("Selesai Absen Hari Ini", canIn: false, canOut: false);
       }
     } else {
-      // Data terakhir BUKAN hari ini
-      // Cek Stale Session (Lupa checkout kemarin)
       if (latest.clockOut == "--:--") {
          _setStatus("Lupa Clock Out tanggal ${latest.date}!", canIn: false, canOut: true);
       } else {
@@ -158,7 +143,6 @@ class UserProvider with ChangeNotifier {
     }
   }
 
-  // LOGIKA STATUS LEMBUR
   void _calculateLemburStatus() {
     if (_lemburHistory.isEmpty) {
        _lemburStatus = "Belum Lembur Hari Ini";
@@ -167,7 +151,6 @@ class UserProvider with ChangeNotifier {
        return;
     }
     
-    // Cari sesi lembur yang belum ditutup
     AttendanceRecord? openLembur;
     try {
       openLembur = _lemburHistory.firstWhere(
@@ -177,12 +160,12 @@ class UserProvider with ChangeNotifier {
 
     if (openLembur != null) {
       _lemburStatus = "Sedang Lembur (Masuk: ${openLembur.clockIn})";
-      _isLemburClockedIn = true;  // Tombol Mulai Mati
-      _isLemburClockedOut = true; // Tombol Selesai Hidup
+      _isLemburClockedIn = true; 
+      _isLemburClockedOut = true;
     } else {
       _lemburStatus = "Belum Lembur Hari Ini";
-      _isLemburClockedIn = false; // Tombol Mulai Hidup
-      _isLemburClockedOut = false; // Tombol Selesai Mati
+      _isLemburClockedIn = false;
+      _isLemburClockedOut = false;
     }
   }
 
@@ -192,7 +175,6 @@ class UserProvider with ChangeNotifier {
     _canClockOut = canOut;
   }
 
-  // API SUBMIT START LEMBUR (Dengan Upload File)
   Future<bool> startLembur({
     required File splFile,
     required double latitude,
@@ -224,7 +206,6 @@ class UserProvider with ChangeNotifier {
     }
   }
 
-  // API SUBMIT ABSEN (Harian & End Lembur)
   Future<bool> submitAttendance({
     required double latitude,
     required double longitude,
@@ -235,8 +216,12 @@ class UserProvider with ChangeNotifier {
       String androidId = await _getAndroidId();
       String endpoint = '';
       
-      if (type == 'in' || type == 'out') endpoint = '/api/absensi';
-      else if (type == 'out-lembur') endpoint = '/api/lembur/end';
+      // PERBAIKAN: Tambah Kurung Kurawal {}
+      if (type == 'in' || type == 'out') {
+        endpoint = '/api/absensi';
+      } else if (type == 'out-lembur') {
+        endpoint = '/api/lembur/end';
+      }
       
       final data = {
         "latitude": latitude,
@@ -259,7 +244,6 @@ class UserProvider with ChangeNotifier {
       return false;
     } catch (e) {
       debugPrint("Error submit: $e");
-      // Auto refresh jika error duplicate/sudah absen (dianggap sukses UI update)
       if (e.toString().contains("sudah absen") || e.toString().contains("Duplicate")) {
          await refreshData();
          return true;
