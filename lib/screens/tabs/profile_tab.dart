@@ -13,32 +13,31 @@ class ProfileTab extends StatelessWidget {
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
     final themeProvider = Provider.of<ThemeProvider>(context);
     final user = userProvider.user;
+    final theme = Theme.of(context);
 
-    // PERBAIKAN: Tambah Kurung Kurawal
     if (user == null) {
       return const Center(child: Text("Data user tidak ditemukan"));
     }
 
     return ListView(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(24),
       children: [
+        // Avatar
         Center(
           child: Stack(
             children: [
-              CircleAvatar(
-                radius: 50,
-                backgroundColor: Colors.grey[200],
-                child: const Icon(Icons.person, size: 60, color: Colors.grey),
-              ),
-              Positioned(
-                bottom: 0,
-                right: 0,
-                child: Container(
-                  padding: const EdgeInsets.all(4),
-                  decoration: const BoxDecoration(color: Colors.blue, shape: BoxShape.circle),
-                  child: const Icon(Icons.edit, color: Colors.white, size: 16),
+              Container(
+                padding: const EdgeInsets.all(4),
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  border: Border.all(color: theme.colorScheme.primary.withValues(alpha: 0.2), width: 2),
                 ),
-              )
+                child: CircleAvatar(
+                  radius: 50,
+                  backgroundColor: theme.colorScheme.surfaceContainerHighest,
+                  child: Icon(Icons.person, size: 60, color: theme.colorScheme.onSurface),
+                ),
+              ),
             ],
           ),
         ),
@@ -46,58 +45,68 @@ class ProfileTab extends StatelessWidget {
         Center(
           child: Text(
             user.namaLengkap,
-            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 22),
+            style: theme.textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
+            textAlign: TextAlign.center,
           ),
         ),
         Center(
           child: Text(
             user.nitad,
-            style: const TextStyle(color: Colors.grey, fontSize: 16),
+            style: theme.textTheme.bodyLarge?.copyWith(color: theme.colorScheme.secondary),
           ),
         ),
         const SizedBox(height: 32),
 
-        const Text("Informasi Pekerjaan", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+        // Info Section
+        Text("Detail Pekerjaan", style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
         const SizedBox(height: 12),
-        Card(
+        Container(
+          decoration: BoxDecoration(
+            color: theme.cardTheme.color,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: theme.colorScheme.outline.withValues(alpha: 0.1)),
+          ),
           child: Column(
             children: [
-              _buildInfoTile(Icons.work, "Jabatan", user.jabatan),
-              const Divider(height: 1),
-              _buildInfoTile(Icons.business, "Cabang", user.cabang),
-              const Divider(height: 1),
-              _buildInfoTile(Icons.location_on, "Lokasi", user.lokasi),
+              _buildInfoTile(context, Icons.work_outline, "Jabatan", user.jabatan),
+              Divider(height: 1, indent: 16, endIndent: 16, color: theme.dividerColor.withValues(alpha: 0.1)),
+              _buildInfoTile(context, Icons.business_outlined, "Cabang", user.cabang),
+              Divider(height: 1, indent: 16, endIndent: 16, color: theme.dividerColor.withValues(alpha: 0.1)),
+              _buildInfoTile(context, Icons.location_on_outlined, "Lokasi", user.lokasi),
             ],
           ),
         ),
         const SizedBox(height: 24),
 
-        const Text("Pengaturan Aplikasi", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+        // Settings Section
+        Text("Pengaturan", style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
         const SizedBox(height: 12),
-        Card(
-          child: Column(
-            children: [
-              SwitchListTile(
-                title: const Text("Mode Gelap"),
-                subtitle: const Text("Ganti tampilan aplikasi ke gelap"),
-                secondary: Icon(Icons.dark_mode, color: Theme.of(context).colorScheme.primary),
-                value: themeProvider.isDarkMode,
-                onChanged: (val) => themeProvider.toggleTheme(val),
-              ),
-            ],
+        Container(
+          decoration: BoxDecoration(
+            color: theme.cardTheme.color,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: theme.colorScheme.outline.withValues(alpha: 0.1)),
+          ),
+          child: SwitchListTile(
+            title: const Text("Mode Gelap"),
+            secondary: Icon(Icons.dark_mode_outlined, color: theme.colorScheme.onSurface),
+            value: themeProvider.isDarkMode,
+            // PERBAIKAN: Hapus activeColor agar ikut tema (Primary Color)
+            onChanged: (val) => themeProvider.toggleTheme(val),
           ),
         ),
-        const SizedBox(height: 24),
+        const SizedBox(height: 32),
 
+        // Logout Button
         SizedBox(
           width: double.infinity,
-          child: ElevatedButton(
+          child: OutlinedButton.icon(
             onPressed: () {
               showDialog(
                 context: context,
                 builder: (ctx) => AlertDialog(
-                  title: const Text("Konfirmasi Logout"),
-                  content: const Text("Apakah Anda yakin ingin keluar?"),
+                  title: const Text("Konfirmasi"),
+                  content: const Text("Yakin ingin keluar?"),
                   actions: [
                     TextButton(onPressed: () => Navigator.pop(ctx), child: const Text("Batal")),
                     TextButton(
@@ -111,26 +120,26 @@ class ProfileTab extends StatelessWidget {
                 ),
               );
             },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.red[50],
-              foregroundColor: Colors.red,
+            icon: const Icon(Icons.logout, color: Colors.red),
+            label: const Text("Log Out", style: TextStyle(color: Colors.red)),
+            style: OutlinedButton.styleFrom(
+              side: BorderSide(color: Colors.red.withValues(alpha: 0.3)),
               padding: const EdgeInsets.symmetric(vertical: 16),
-              elevation: 0,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
             ),
-            child: const Text("Log Out"),
           ),
         ),
-        const SizedBox(height: 20),
-        const Center(child: Text("Versi 1.0.0", style: TextStyle(color: Colors.grey, fontSize: 12))),
+        const SizedBox(height: 24),
       ],
     );
   }
 
-  Widget _buildInfoTile(IconData icon, String title, String value) {
+  Widget _buildInfoTile(BuildContext context, IconData icon, String title, String value) {
+    final theme = Theme.of(context);
     return ListTile(
-      leading: Icon(icon, color: Colors.grey[600]),
-      title: Text(title, style: const TextStyle(fontSize: 14, color: Colors.grey)),
-      subtitle: Text(value, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.black)),
+      leading: Icon(icon, color: theme.colorScheme.primary),
+      title: Text(title, style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.secondary)),
+      subtitle: Text(value, style: theme.textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.w600)),
     );
   }
 }

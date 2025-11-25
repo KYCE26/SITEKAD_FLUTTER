@@ -11,71 +11,75 @@ class ThemeProvider with ChangeNotifier {
 
   ThemeData get currentTheme => _isDarkMode ? _darkTheme : _lightTheme;
 
-  // --- PALET WARNA MODERN (Clean White + Elegant Red) ---
-  
-  // TEMA TERANG
+  // --- TEMA TERANG ---
   final ThemeData _lightTheme = ThemeData(
     useMaterial3: true,
     brightness: Brightness.light,
     colorScheme: ColorScheme.fromSeed(
-      seedColor: const Color(0xFFE11D48), // Merah Cherry Modern
-      primary: const Color(0xFFE11D48),
-      secondary: const Color(0xFF64748B),
+      seedColor: const Color(0xFFD90429), // Merah Brand
+      primary: const Color(0xFFD90429),
+      secondary: const Color(0xFF8D99AE),
       surface: const Color(0xFFFFFFFF),
-      surfaceContainerHighest: const Color(0xFFF1F5F9),
-      onSurface: const Color(0xFF0F172A),
+      onSurface: const Color(0xFF2B2D42),
+      outline: const Color(0xFFD90429),
     ),
-    scaffoldBackgroundColor: const Color(0xFFFAFAFA),
+    scaffoldBackgroundColor: const Color(0xFFF8F9FA),
     
     appBarTheme: const AppBarTheme(
       backgroundColor: Colors.transparent,
       surfaceTintColor: Colors.transparent,
-      foregroundColor: Color(0xFF0F172A),
+      foregroundColor: Color(0xFF2B2D42),
       elevation: 0,
-      centerTitle: false,
     ),
     
-    // PERBAIKAN: Gunakan CardThemeData
     cardTheme: CardThemeData(
       elevation: 0,
+      color: Colors.white,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(16),
-        side: BorderSide(color: Colors.grey.withValues(alpha: 0.1)),
+        side: BorderSide(color: Colors.grey.withValues(alpha: 0.2)),
       ),
-      color: Colors.white,
     ),
-    
+
     elevatedButtonTheme: ElevatedButtonThemeData(
       style: ElevatedButton.styleFrom(
+        backgroundColor: const Color(0xFFD90429),
+        foregroundColor: Colors.white,
         elevation: 0,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 24),
-        backgroundColor: const Color(0xFFE11D48),
-        foregroundColor: Colors.white,
+        padding: const EdgeInsets.symmetric(vertical: 16),
       ),
     ),
   );
 
-  // TEMA GELAP
+  // --- TEMA GELAP ---
   final ThemeData _darkTheme = ThemeData(
     useMaterial3: true,
     brightness: Brightness.dark,
     colorScheme: ColorScheme.fromSeed(
-      seedColor: const Color(0xFFFB7185),
+      seedColor: const Color(0xFFEF233C),
       brightness: Brightness.dark,
-      surface: const Color(0xFF1E293B),
+      primary: const Color(0xFFEF233C),
+      surface: const Color(0xFF1E1E1E),
+      onSurface: const Color(0xFFEDF2F4),
+      // PERBAIKAN: Hapus 'background' karena sudah deprecated & dihandle scaffoldBackgroundColor
     ),
-    scaffoldBackgroundColor: const Color(0xFF0F172A),
+    scaffoldBackgroundColor: const Color(0xFF121212),
+    
     appBarTheme: const AppBarTheme(
       backgroundColor: Colors.transparent,
+      surfaceTintColor: Colors.transparent,
+      foregroundColor: Colors.white,
       elevation: 0,
     ),
-    
-    // PERBAIKAN: Gunakan CardThemeData
+
     cardTheme: CardThemeData(
       elevation: 0,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      color: const Color(0xFF1E293B),
+      color: const Color(0xFF1E1E1E),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+        side: BorderSide(color: Colors.white.withValues(alpha: 0.1)),
+      ),
     ),
   );
 

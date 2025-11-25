@@ -26,53 +26,67 @@ class _HomeTabState extends State<HomeTab> {
   @override
   Widget build(BuildContext context) {
     final userProvider = Provider.of<UserProvider>(context);
-    final colorScheme = Theme.of(context).colorScheme;
+    final theme = Theme.of(context);
 
     return RefreshIndicator(
       onRefresh: () => userProvider.refreshData(),
       child: ListView(
-        padding: const EdgeInsets.all(20.0),
+        padding: const EdgeInsets.all(24.0),
         children: [
-          _buildWelcomeHeader(userProvider.user),
+          _buildWelcomeHeader(userProvider.user, theme),
           const SizedBox(height: 24),
 
-          _buildClockCard(context, colorScheme, userProvider),
+          _buildClockCard(context, theme, userProvider),
           const SizedBox(height: 24),
 
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text("Aktivitas Terkini", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
-              TextButton(onPressed: () {}, child: const Text("Lihat Semua")),
+              Text("Aktivitas Terkini", style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
+              // TextButton(onPressed: () {}, child: const Text("Lihat Semua")),
             ],
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 12),
 
           if (userProvider.history.isEmpty)
-            const Center(child: Padding(padding: EdgeInsets.all(20), child: Text("Belum ada aktivitas")))
+            Center(
+              child: Padding(
+                padding: const EdgeInsets.all(20), 
+                child: Text("Belum ada aktivitas", style: TextStyle(color: theme.colorScheme.secondary))
+              )
+            )
           else
-            ...userProvider.history.take(5).map((rec) => _buildHistoryItem(rec, colorScheme)),
+            ...userProvider.history.take(5).map((rec) => _buildHistoryItem(rec, theme)),
         ],
       ),
     );
   }
 
-  Widget _buildWelcomeHeader(UserProfile? user) {
+  Widget _buildWelcomeHeader(UserProfile? user, ThemeData theme) {
     return Row(
       children: [
-        CircleAvatar(
-          radius: 25,
-          backgroundColor: Colors.grey[200],
-          child: const Icon(Icons.person, size: 30, color: Colors.grey),
+        Container(
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            border: Border.all(color: theme.colorScheme.primary, width: 2),
+          ),
+          child: CircleAvatar(
+            radius: 28,
+            backgroundColor: theme.colorScheme.surface,
+            child: Icon(Icons.person, size: 32, color: theme.colorScheme.onSurface),
+          ),
         ),
         const SizedBox(width: 16),
         Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text("Halo, Selamat Bekerja!", style: TextStyle(fontSize: 12, color: Colors.grey)),
             Text(
               user?.namaLengkap ?? "Loading...",
-              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+              style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+            ),
+            Text(
+              user?.nitad ?? "...",
+              style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.secondary),
             ),
           ],
         ),
@@ -80,7 +94,7 @@ class _HomeTabState extends State<HomeTab> {
     );
   }
 
-  Widget _buildClockCard(BuildContext context, ColorScheme colors, UserProvider provider) {
+  Widget _buildClockCard(BuildContext context, ThemeData theme, UserProvider provider) {
     void startScanning(String type) async {
       final qrResult = await Navigator.push(
         context,
@@ -97,64 +111,81 @@ class _HomeTabState extends State<HomeTab> {
       }
     }
 
+    final isDarkMode = theme.brightness == Brightness.dark;
+
     return Card(
-      elevation: 4,
-      color: colors.primary,
+      // Card Putih/Gelap dengan Border Merah Tipis
+      elevation: 0,
+      color: theme.cardTheme.color,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(24),
+        side: BorderSide(color: theme.colorScheme.primary.withValues(alpha: 0.3), width: 1.5),
+      ),
       child: Padding(
         padding: const EdgeInsets.all(24),
         child: Column(
           children: [
+            // JAM DIGITAL (WARNA MERAH)
             StreamBuilder<DateTime>(
               stream: _clockStream,
               builder: (_, snap) => Text(
                 DateFormat('HH:mm:ss').format(snap.data ?? DateTime.now()),
-                style: const TextStyle(fontSize: 48, fontWeight: FontWeight.bold, color: Colors.white),
+                style: TextStyle(
+                  fontSize: 52, 
+                  fontWeight: FontWeight.bold, 
+                  color: theme.colorScheme.primary, // Merah di sini!
+                  letterSpacing: 2,
+                ),
               ),
             ),
             Text(
               DateFormat('EEEE, dd MMMM yyyy', 'id_ID').format(DateTime.now()),
-              style: const TextStyle(fontSize: 14, color: Colors.white70),
+              style: TextStyle(fontSize: 16, color: theme.colorScheme.secondary),
             ),
-            const SizedBox(height: 20),
+            const SizedBox(height: 24),
+            const Divider(),
+            const SizedBox(height: 16),
+            
+            // Status Pill
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
               decoration: BoxDecoration(
-                // PERBAIKAN: withValues
-                color: Colors.white.withValues(alpha: 0.2),
+                color: isDarkMode ? Colors.white.withValues(alpha: 0.05) : Colors.grey.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(20)
               ),
               child: Text(
-                provider.attendanceStatus, 
-                style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
+                "Status: ${provider.attendanceStatus}", 
+                style: TextStyle(fontWeight: FontWeight.w600, color: theme.colorScheme.onSurface),
                 textAlign: TextAlign.center,
               ),
             ),
             const SizedBox(height: 24),
+            
+            // Tombol Aksi
             Row(
               children: [
                 Expanded(
-                  child: ElevatedButton.icon(
+                  child: ElevatedButton(
                     onPressed: provider.canClockIn ? () => startScanning('in') : null,
-                    icon: const Icon(Icons.login),
-                    label: const Text("MASUK"),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.white,
-                      foregroundColor: colors.primary,
-                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      backgroundColor: theme.colorScheme.primary, // Tombol Masuk Merah Solid
+                      foregroundColor: Colors.white,
+                      elevation: 0,
                     ),
+                    child: const Text("Clock In"),
                   ),
                 ),
                 const SizedBox(width: 16),
                 Expanded(
-                  child: ElevatedButton.icon(
+                  child: OutlinedButton(
                     onPressed: provider.canClockOut ? () => startScanning('out') : null,
-                    icon: const Icon(Icons.logout),
-                    label: const Text("PULANG"),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF2B2D42),
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(vertical: 12),
+                    style: OutlinedButton.styleFrom(
+                      side: BorderSide(color: theme.colorScheme.primary), // Tombol Keluar Outline Merah
+                      foregroundColor: isDarkMode ? Colors.white : theme.colorScheme.primary,
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                     ),
+                    child: const Text("Clock Out"),
                   ),
                 ),
               ],
@@ -165,36 +196,28 @@ class _HomeTabState extends State<HomeTab> {
     );
   }
 
-  Widget _buildHistoryItem(AttendanceRecord record, ColorScheme colors) {
+  Widget _buildHistoryItem(AttendanceRecord record, ThemeData theme) {
     bool isOk = !record.isLate;
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Theme.of(context).cardColor,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            // PERBAIKAN: withValues
-            color: Colors.black.withValues(alpha: 0.05),
-            blurRadius: 5,
-            offset: const Offset(0, 2),
-          )
-        ]
+        color: theme.cardTheme.color,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: theme.colorScheme.outline.withValues(alpha: 0.1)),
       ),
       child: Row(
         children: [
           Container(
             padding: const EdgeInsets.all(10),
             decoration: BoxDecoration(
-              // PERBAIKAN: withValues
               color: isOk ? Colors.green.withValues(alpha: 0.1) : Colors.red.withValues(alpha: 0.1),
               shape: BoxShape.circle,
             ),
             child: Icon(
-              isOk ? Icons.check_circle : Icons.warning,
+              isOk ? Icons.check_circle : Icons.warning_rounded,
               color: isOk ? Colors.green : Colors.red,
-              size: 20,
+              size: 24,
             ),
           ),
           const SizedBox(width: 16),
@@ -202,11 +225,14 @@ class _HomeTabState extends State<HomeTab> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(record.date, style: const TextStyle(fontWeight: FontWeight.bold)),
+                Text(
+                  record.date, 
+                  style: theme.textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.bold)
+                ),
                 const SizedBox(height: 4),
                 Text(
-                  "${record.clockIn} - ${record.clockOut}",
-                  style: const TextStyle(color: Colors.grey, fontSize: 12),
+                  "Masuk: ${record.clockIn} • Keluar: ${record.clockOut}",
+                  style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.secondary),
                 ),
               ],
             ),
