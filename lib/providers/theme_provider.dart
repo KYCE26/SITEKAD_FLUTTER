@@ -3,52 +3,80 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 class ThemeProvider with ChangeNotifier {
   bool _isDarkMode = false;
-
   bool get isDarkMode => _isDarkMode;
 
   ThemeProvider() {
     _loadTheme();
   }
 
-  ThemeData get currentTheme {
-    return _isDarkMode ? _darkTheme : _lightTheme;
-  }
+  ThemeData get currentTheme => _isDarkMode ? _darkTheme : _lightTheme;
 
-  // Tema Terang
+  // --- PALET WARNA MODERN (Clean White + Elegant Red) ---
+  
+  // TEMA TERANG
   final ThemeData _lightTheme = ThemeData(
     useMaterial3: true,
     brightness: Brightness.light,
     colorScheme: ColorScheme.fromSeed(
-      seedColor: const Color(0xFFD90429),
-      primary: const Color(0xFFD90429),
-      surface: const Color(0xFFF8F9FA), 
+      seedColor: const Color(0xFFE11D48), // Merah Cherry Modern
+      primary: const Color(0xFFE11D48),
+      secondary: const Color(0xFF64748B),
+      surface: const Color(0xFFFFFFFF),
+      surfaceContainerHighest: const Color(0xFFF1F5F9),
+      onSurface: const Color(0xFF0F172A),
     ),
-    scaffoldBackgroundColor: const Color(0xFFF8F9FA),
+    scaffoldBackgroundColor: const Color(0xFFFAFAFA),
+    
     appBarTheme: const AppBarTheme(
-      backgroundColor: Colors.white,
-      foregroundColor: Colors.black,
+      backgroundColor: Colors.transparent,
+      surfaceTintColor: Colors.transparent,
+      foregroundColor: Color(0xFF0F172A),
       elevation: 0,
+      centerTitle: false,
     ),
-    // Kita hapus cardTheme manual agar tidak konflik tipe data di Flutter versi IDX
+    
+    // PERBAIKAN: Gunakan CardThemeData
+    cardTheme: CardThemeData(
+      elevation: 0,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+        side: BorderSide(color: Colors.grey.withValues(alpha: 0.1)),
+      ),
+      color: Colors.white,
+    ),
+    
+    elevatedButtonTheme: ElevatedButtonThemeData(
+      style: ElevatedButton.styleFrom(
+        elevation: 0,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 24),
+        backgroundColor: const Color(0xFFE11D48),
+        foregroundColor: Colors.white,
+      ),
+    ),
   );
 
-  // Tema Gelap
+  // TEMA GELAP
   final ThemeData _darkTheme = ThemeData(
     useMaterial3: true,
     brightness: Brightness.dark,
     colorScheme: ColorScheme.fromSeed(
-      seedColor: const Color(0xFFD90429),
+      seedColor: const Color(0xFFFB7185),
       brightness: Brightness.dark,
-      primary: const Color(0xFFEF233C),
-      surface: const Color(0xFF1E1E1E),
+      surface: const Color(0xFF1E293B),
     ),
-    scaffoldBackgroundColor: const Color(0xFF121212),
+    scaffoldBackgroundColor: const Color(0xFF0F172A),
     appBarTheme: const AppBarTheme(
-      backgroundColor: Color(0xFF1E1E1E),
-      foregroundColor: Colors.white,
+      backgroundColor: Colors.transparent,
       elevation: 0,
     ),
-    // Kita hapus cardTheme manual
+    
+    // PERBAIKAN: Gunakan CardThemeData
+    cardTheme: CardThemeData(
+      elevation: 0,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      color: const Color(0xFF1E293B),
+    ),
   );
 
   void toggleTheme(bool isOn) async {
