@@ -36,7 +36,7 @@ class ProfileTab extends StatelessWidget {
                 child: const CircleAvatar(
                   radius: 50,
                   backgroundColor: Colors.white, // Background putih biar logo jpg terlihat jelas
-                  backgroundImage: AssetImage('assets/images/logo_dapensi.jpg'), 
+                  backgroundImage: AssetImage('assets/images/logo_dapensi.png'), 
                 ),
               ),
             ],

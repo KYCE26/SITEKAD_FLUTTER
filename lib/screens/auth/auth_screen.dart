@@ -80,7 +80,7 @@ class _AuthScreenState extends State<AuthScreen> {
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(24),
             image: const DecorationImage(
-              image: AssetImage('assets/images/logo_dapensi.jpg'), // Pastikan path ini benar
+              image: AssetImage('assets/images/logo_dapensi.png'), // Pastikan path ini benar
               fit: BoxFit.contain,
             ),
           ),

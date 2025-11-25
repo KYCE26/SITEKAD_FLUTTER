@@ -73,7 +73,7 @@ class _HomeTabState extends State<HomeTab> {
             shape: BoxShape.circle,
             border: Border.all(color: theme.colorScheme.primary.withValues(alpha: 0.2), width: 1),
             image: const DecorationImage(
-              image: AssetImage('assets/images/logo_dapensi.jpg'),
+              image: AssetImage('assets/images/logo_dapensi.png'),
               fit: BoxFit.contain, 
             ),
           ),
